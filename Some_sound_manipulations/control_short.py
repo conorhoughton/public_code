@@ -70,8 +70,8 @@ for i,envelope in enumerate(short_envelopes):
     for t,e in enumerate(envelope):
         s_control[t]+=np.sin(nu*t)*e
 
+#this messing is needed to cast back to int16 for .wav
 control_snd=zeros((s_control.shape[0]),dtype='int16')
-
 for i in range(0,s_control.shape[0]):
     control_snd[i]=s_control[i]
 

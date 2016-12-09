@@ -1,10 +1,32 @@
 
 #http://stackoverflow.com/questions/12093594/how-to-implement-band-pass-butterworth-filter-with-scipy-signal-butter
 
+#http://stackoverflow.com/questions/33933842/how-to-generate-noise-in-frequency-range-with-numpy
+
 import matplotlib.pyplot as plt
 from pylab import *
 from scipy.io import wavfile
 import numpy as np
+
+def fftnoise(f):
+    f = np.array(f, dtype='complex')
+    Np = (len(f) - 1) // 2
+    phases = np.random.rand(Np) * 2 * np.pi
+    phases = np.cos(phases) + 1j * np.sin(phases)
+    f[1:Np+1] *= phases
+    f[-1:-1-Np:-1] = np.conj(f[1:Np+1])
+    return np.fft.ifft(f).real
+
+def band_limited_noise(min_freq, max_freq, samples=1024, samplerate=1):
+    freqs = np.abs(np.fft.fftfreq(samples, 1./samplerate))
+    f = np.zeros(samples)
+    idx = np.where(np.logical_and(freqs>=min_freq, freqs<=max_freq))[0]
+    f[idx] = 1
+    return fftnoise(f)
+
+def louden(signal):
+    this_max=np.amax(abs(signal))
+    return signal/this_max
 
 filename="Karen_trim.wav"
 
@@ -48,30 +70,36 @@ for i,bp_signal in enumerate(s0_bp):
     print i,
     analytic_signal = hilbert(bp_signal)
     envelopes.append(np.abs(analytic_signal))
-    carriers.append(np.real(analytic_signal/np.abs(analytic_signal)))
 print "\n"
 
-
 s_control=zeros((len(s0)))
-s_rebuild=zeros((len(s0)))
+
+
+cut_level=1
+high=False
 
 for i,envelope in enumerate(envelopes):
-    freq=0.5*(bands[i][1]+bands[i][0])
-    nu=2*np.pi*freq/samp_freq
+    noise=band_limited_noise(bands[i][0],bands[i][1], len(envelope),
+                             samp_freq)
+    noise=louden(noise)
+    cut=cut_level*np.average(envelope)
     for t,e in enumerate(envelope):
-        s_control[t]+=np.sin(nu*t)*e
-        s_rebuild[t]+=carriers[i][t]*e
+        if high and e>cut:
+            s_control[t]+=noise[t]*e
+        elif not high and e<cut:
+            s_control[t]+=noise[t]*e
 
 #this messing is needed to cast back to int16 for .wav
 control_snd=zeros((s_control.shape[0]),dtype='int16')
-rebuild_snd=zeros((s_control.shape[0]),dtype='int16')
-
 for i in range(0,s_control.shape[0]):
     control_snd[i]=s_control[i]
-    rebuild_snd[i]=s_rebuild[i]
+############
 
-wavfile.write('control_'+filename,samp_freq,control_snd)
-wavfile.write('rebuild_'+filename,samp_freq,rebuild_snd)
+cut_side="low"
+if high:
+    cut_side="high"
 
-#control uses sine, rebuild rebuilds the sound from the envelope and
-#carrier
+wavfile.write('clipped_control_'+cut_side+'_'+str(cut_level)+'_'+filename,samp_freq,control_snd)
+
+
+

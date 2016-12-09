@@ -34,9 +34,13 @@ snd=np.ndarray.astype(snd,float)
 plt.plot(snd)
 plt.show()
 
+#band pass
+
 plt.plot(snd)
 plt.plot(butter_bandpass_filter(abs(snd),0, 20, samp_freq,2))
 plt.show()
+
+#smooth by removing low power bands
 
 w = scipy.fftpack.rfft(snd)
 spectrum = w**2
@@ -48,6 +52,8 @@ w2[cutoff_idx] = 0
 plt.plot(snd)
 plt.plot(np.abs(scipy.fftpack.irfft(w2)))
 plt.show()
+
+#smooth with a kernel
 
 n=len(snd)
 offset=2000
