@@ -45,8 +45,9 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order):
 
 
 def control(samp_freq,snd,filename):
-
-    s0=np.concatenate([zeros((2000)),snd,zeros((2000))])
+    print snd.shape
+#    s0=np.concatenate([zeros((2000)),snd,zeros((2000))])
+    s0=snd
     print s0.shape
 
 
@@ -56,7 +57,7 @@ def control(samp_freq,snd,filename):
     for i,band in enumerate(bands):
         print i,
         s0_bp.append(butter_bandpass_filter(s0,band[0],band[1],samp_freq,2))
-        print "\n"
+    print "\n"
 
     envelopes=[]
     carriers=[]
@@ -70,15 +71,17 @@ def control(samp_freq,snd,filename):
 
     s_control=zeros((len(s0)))
 
-
-    shift=1
-
     for i,envelope in enumerate(envelopes):
-        noise=band_limited_noise(shift*bands[i][0],shift*bands[i][1], len(envelope),samp_freq)
+        noise=band_limited_noise(bands[i][0],bands[i][1], len(envelope),samp_freq)
         noise=louden(noise)
         for t,e in enumerate(envelope):
             s_control[t]+=noise[t]*e
 
+    # for i,envelope in enumerate(envelopes):
+    #     freq=0.5*(bands[i][1]+bands[i][0])
+    #     nu=2*np.pi*freq/samp_freq
+    #     for t,e in enumerate(envelope):
+    #         s_control[t]+=np.sin(nu*t)*e
 
     return s_control
 

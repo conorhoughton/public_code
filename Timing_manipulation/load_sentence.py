@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from pylab import *
 from bands import *
 from envelope_noise import *
+from stretcher import *
 from scipy.io import wavfile
 import numpy as np
 
@@ -35,6 +36,13 @@ class Sentence:
 
         self.length=len(self.word_names)
 
+    def stretch(self,length):
+
+        for i,w in enumerate(self.words):
+            new_w=stretcher(w,self.freq,length)
+            self.words[i]=np.asarray(new_w)
+
+
 
 class Control_sentence:
 
@@ -65,6 +73,9 @@ def s_concatenate(sentence):
     wavfile.write("test.wav",sentence.freq,s_int16)
 
 def main(argv):
+
+   new_l=0.5
+
    sentence_file = ''
    try:
       opts, args = getopt.getopt(argv,"hi:",["sfile="])
@@ -79,9 +90,8 @@ def main(argv):
          sentence_file = arg
    print 'Sentence file is ', sentence_file
    s=Sentence(sentence_file)
-
+   s.stretch(new_l)
    
-
    control_words=[]
    for i in range(0,s.length):
        control_words.append(control(s.freq,s.words[i],s.word_names[i]))
@@ -91,5 +101,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    print bands
     main(sys.argv[1:])
