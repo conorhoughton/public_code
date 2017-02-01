@@ -4,8 +4,10 @@ from pylab import *
 from bands import *
 from envelope_noise import *
 from stretcher import *
+from shortner import *
 from scipy.io import wavfile
 import numpy as np
+from random import gammavariate
 
 class Sentence:
 
@@ -42,7 +44,12 @@ class Sentence:
             new_w=stretcher(w,self.freq,length)
             self.words[i]=np.asarray(new_w)
 
+    def shorten(self,length,stride):
 
+        for i,w in enumerate(self.words):
+            scale=length/self.t_lengths[i]
+            new_w=short_signal(stride,self.freq,w,scale)
+            self.words[i]=np.asarray(new_w)
 
 class Control_sentence:
 
@@ -74,7 +81,10 @@ def s_concatenate(sentence):
 
 def main(argv):
 
-   new_l=0.5
+   base_l=0.15
+   new_l_av=0.2
+   k=5
+   theta=new_l_av/k
 
    sentence_file = ''
    try:
@@ -90,14 +100,40 @@ def main(argv):
          sentence_file = arg
    print 'Sentence file is ', sentence_file
    s=Sentence(sentence_file)
-   s.stretch(new_l)
-   
-   control_words=[]
-   for i in range(0,s.length):
-       control_words.append(control(s.freq,s.words[i],s.word_names[i]))
 
-   control_s=Control_sentence(control_words,s.freq,s.word_names)
-   s_concatenate(control_s)
+
+   #s.stretch(new_l)
+
+   simple_shorten=False
+
+   if simple_shorten:
+       ms=0.001
+       stride=15*ms
+
+       s.shorten(new_l,stride)
+       
+       control_words=[]
+       for i in range(0,s.length):
+           control_words.append(s.words[i])
+
+       control_s=Control_sentence(control_words,s.freq,s.word_names)
+       s_concatenate(control_s)
+   
+   else:
+          
+       control_words=[]
+       for i in range(0,s.length):
+           new_l=base_l+gammavariate(k,theta)
+           print new_l,
+           control_words.append(control(s.freq,s.words[i],new_l))
+       print "\n"
+
+       control_s=Control_sentence(control_words,s.freq,s.word_names)
+       s_concatenate(control_s)
+       
+
+
+#   s_concatenate(s)
 
 
 if __name__ == "__main__":

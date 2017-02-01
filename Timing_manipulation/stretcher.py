@@ -9,7 +9,7 @@ def stretcher(snd,freq,new_length):
     new_snd=[]
 
 
-    print new_length,old_length,new_length_n,mu
+#    print new_length,old_length,new_length_n,mu
 
     for t_n in range(0,new_length_n):
         
