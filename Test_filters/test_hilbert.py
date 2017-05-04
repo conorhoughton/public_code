@@ -20,6 +20,11 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order):
     y = lfilter(b, a, data)
     return y
 
+def make_angle(t):
+    while t>2*np.pi:
+        t-=2*np.pi
+    return t
+
 big_t=2000
 sample=np.zeros(big_t)
 
@@ -36,8 +41,11 @@ sample=np.zeros(big_t)
 freq1=.05
 freq2=.5
 
+angles=[]
+
 for t in range(0,big_t):
     sample[t]+=m.sin(freq1*t)+m.sin(freq2*t)
+    angles.append(make_angle(freq1*t)-np.pi)
 
 band0=.0001
 band1=.01
@@ -49,14 +57,23 @@ sample_bp_r=butter_bandpass_filter(np.flipud(sample),band0,band1,1.0,4)
 sample_fft=np.fft.fft(sample)
 
 for k in range(0,len(sample_fft)):
-    if k>40 and k<len(sample_fft)-40:
+    if k>40:
         sample_fft[k]=0
 
 sample_ifft=np.fft.ifft(sample_fft)
 
-plt.plot(sample)
-plt.plot(sample_ifft)
-#plt.plot(sample_bp)
-plt.plot(sample_bp+sample_bp_r)
-plt.show()
 
+
+#plt.plot(sample)
+#plt.plot(np.abs(sample_ifft))
+#plt.plot(sample_ifft)
+#plt.plot(sample_bp)
+#plt.plot(sample_bp+sample_bp_r)
+#plt.show()
+
+#plt.plot(angles)
+plt.plot((np.angle(sample_ifft)-angles)/np.pi)
+#plt.plot(np.angle(hilbert(sample_bp)))
+#plt.plot(np.angle(hilbert(sample_bp+sample_bp_r)))
+plt.show()
+print 
